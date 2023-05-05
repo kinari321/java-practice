@@ -42,4 +42,36 @@ public class JacksonCsvReadTest {
             }
         }
     }
+
+    @Test
+    public void readIrregularCsvWithoutHeaderAsStringArray() throws IOException {
+        CsvMapper mapper = new CsvMapper();
+        CsvSchema schema =
+                CsvSchema
+                        .emptySchema()
+                        .withColumnSeparator(',')  // default
+                        .withQuoteChar('"')   // default
+                        .withEscapeChar('\\');
+
+        mapper.enable(CsvParser.Feature.WRAP_AS_ARRAY);
+
+        /**
+         * 1行目: "hoge,fuga"がある
+         * 2行目: ""がある
+         * 3行目: nullがある
+         * 4行目: nullが続く
+         * 5行目: カラムの数が異なる
+         */
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get("src/test/resources/books_irregular.csv"), StandardCharsets.UTF_8)) {
+            MappingIterator<String[]> iterator =
+                    mapper
+                            .readerFor(String[].class)
+                            .with(schema)
+                            .readValues(reader);
+
+            while (iterator.hasNext()) {
+                System.out.println(Arrays.stream(iterator.next()).collect(Collectors.joining(", ")));
+            }
+        }
+    }
 }
